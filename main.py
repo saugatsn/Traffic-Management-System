@@ -1,4 +1,35 @@
 import matplotlib.pyplot as plt
+import random
+import json
+
+# Function to generate random values for speed and volume
+def generate_random_data():
+    data = {
+        "road_A": {
+            "width": 18,  # Width of road A in meters (constant)
+            "speed": random.randint(30, 80),  # Speed of vehicles on road A (random)
+            "volume": random.randint(200, 400)  # Volume of vehicles on road A (random)
+        },
+        "road_B": {
+            "width": 12,  # Width of road B in meters (constant)
+            "speed": random.randint(30, 80),  # Speed of vehicles on road B (random)
+            "volume": random.randint(200, 400)  # Volume of vehicles on road B (random)
+        }
+    }
+    return json.dumps(data, indent=4)
+
+# Get values from JSON
+traffic_data_json = generate_random_data()
+traffic_data = json.loads(traffic_data_json)
+
+# Extract the data for road A and B
+width_A = traffic_data['road_A']['width']
+speed_A = traffic_data['road_A']['speed']
+volume_A = traffic_data['road_A']['volume']
+
+width_B = traffic_data['road_B']['width']
+speed_B = traffic_data['road_B']['speed']
+volume_B = traffic_data['road_B']['volume']
 
 # Step 1: Calculate Amber Time
 def amber_time(speed):
@@ -52,14 +83,6 @@ def do_not_walk_time_B(actual_red_A):
 # Step 9: Calculate Pedestrian Walk Time for Road A
 def pedestrian_walk_time(cycle_length, do_not_walk_A, clearance_A):
     return cycle_length - do_not_walk_A - clearance_A
-
-# Input Data
-width_A = 18  # Width of road A in meters
-width_B = 12  # Width of road B in meters
-speed_A = 55  # Approach speed of vehicles on road A in km/h
-speed_B = 40  # Approach speed of vehicles on road B in km/h
-volume_A = 275  # Average approach volume per hour for road A
-volume_B = 225  # Average approach volume per hour for road B
 
 # Perform Calculations
 amber_A = amber_time(speed_A)
@@ -130,8 +153,7 @@ print(f"PSB Walk Time: {walk_B:.2f} seconds, Clearance Time: {clearance_B:.2f} s
 print(f"TSB Green Time: {green_B:.2f} seconds, Amber Time: {amber_B:.2f} seconds, Red Time: {actual_red_B:.2f} seconds")
 print(f"PSA Walk Time: {walk_A:.2f} seconds, Clearance Time: {clearance_A:.2f} seconds, Do Not Walk Time: {do_not_walk_A:.2f} seconds")
 
-
-# Visualize the Results
+# Visualize the Results (unchanged from original code)
 fig, ax = plt.subplots(2, 1, figsize=(10, 6))  # 2 rows, 1 column
 
 # TSA and PSB visualization (Start with Green -> Yellow -> Red)
