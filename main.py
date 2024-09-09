@@ -1,35 +1,25 @@
+import threading
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import random
 import json
+import time
 
 # Function to generate random values for speed and volume
 def generate_random_data():
     data = {
         "road_A": {
-            "width": 18,  # Width of road A in meters (constant)
+            "width": random.randint(10, 20),  # Width of road A in meters (constant)
             "speed": random.randint(30, 80),  # Speed of vehicles on road A (random)
             "volume": random.randint(200, 400)  # Volume of vehicles on road A (random)
         },
         "road_B": {
-            "width": 12,  # Width of road B in meters (constant)
+            "width": random.randint(10, 20),  # Width of road B in meters (constant)
             "speed": random.randint(30, 80),  # Speed of vehicles on road B (random)
             "volume": random.randint(200, 400)  # Volume of vehicles on road B (random)
         }
     }
     return json.dumps(data, indent=4)
-
-# Get values from JSON
-traffic_data_json = generate_random_data()
-traffic_data = json.loads(traffic_data_json)
-
-# Extract the data for road A and B
-width_A = traffic_data['road_A']['width']
-speed_A = traffic_data['road_A']['speed']
-volume_A = traffic_data['road_A']['volume']
-
-width_B = traffic_data['road_B']['width']
-speed_B = traffic_data['road_B']['speed']
-volume_B = traffic_data['road_B']['volume']
 
 # Step 1: Calculate Amber Time
 def amber_time(speed):
@@ -84,107 +74,137 @@ def do_not_walk_time_B(actual_red_A):
 def pedestrian_walk_time(cycle_length, do_not_walk_A, clearance_A):
     return cycle_length - do_not_walk_A - clearance_A
 
-# Perform Calculations
-amber_A = amber_time(speed_A)
-print(f"Amber Time for Road A: {amber_A} seconds")
+window_open=True
+while True:
+        # Get values from JSON
+    traffic_data_json = generate_random_data()
+    traffic_data = json.loads(traffic_data_json)
 
-amber_B = amber_time(speed_B)
-print(f"Amber Time for Road B: {amber_B} seconds")
+    # Extract the data for road A and B
+    width_A = traffic_data['road_A']['width']
+    speed_A = traffic_data['road_A']['speed']
+    volume_A = traffic_data['road_A']['volume']
 
-clearance_A = pedestrian_clearance_time(width_A)
-print(f"Pedestrian Clearance Time for Road A: {clearance_A:.2f} seconds")
+    width_B = traffic_data['road_B']['width']
+    speed_B = traffic_data['road_B']['speed']
+    volume_B = traffic_data['road_B']['volume']
 
-clearance_B = pedestrian_clearance_time(width_B)
-print(f"Pedestrian Clearance Time for Road B: {clearance_B:.2f} seconds")
+    # Perform Calculations
+    amber_A = amber_time(speed_A)
+    print(f"Amber Time for Road A: {amber_A} seconds")
 
-# Minimum red light times (based on pedestrian clearance time)
-min_red_A = min_red_time(clearance_A)
-print(f"Minimum Red Light Time for Road A: {min_red_A:.2f} seconds")
+    amber_B = amber_time(speed_B)
+    print(f"Amber Time for Road B: {amber_B} seconds")
 
-min_red_B = min_red_time(clearance_B)
-print(f"Minimum Red Light Time for Road B: {min_red_B:.2f} seconds")
+    clearance_A = pedestrian_clearance_time(width_A)
+    print(f"Pedestrian Clearance Time for Road A: {clearance_A:.2f} seconds")
 
-min_green_A = minimum_green_time(min_red_B, amber_A)
-print(f"Minimum Green Time for Road A: {min_green_A:.2f} seconds")
+    clearance_B = pedestrian_clearance_time(width_B)
+    print(f"Pedestrian Clearance Time for Road B: {clearance_B:.2f} seconds")
 
-min_green_B = minimum_green_time(min_red_A, amber_B)
-print(f"Minimum Green Time for Road B: {min_green_B:.2f} seconds")
+    # Minimum red light times (based on pedestrian clearance time)
+    min_red_A = min_red_time(clearance_A)
+    print(f"Minimum Red Light Time for Road A: {min_red_A:.2f} seconds")
 
-green_A, green_B = actual_green_time(min_green_A, min_green_B, volume_A, volume_B)
-print(f"Actual Green Time for Road A: {green_A:.2f} seconds")
-print(f"Actual Green Time for Road B: {green_B:.2f} seconds")
+    min_red_B = min_red_time(clearance_B)
+    print(f"Minimum Red Light Time for Road B: {min_red_B:.2f} seconds")
 
-cycle_len = cycle_length(green_A, green_B, amber_A, amber_B)
-print(f"Cycle Length: {cycle_len:.2f} seconds")
+    min_green_A = minimum_green_time(min_red_B, amber_A)
+    print(f"Minimum Green Time for Road A: {min_green_A:.2f} seconds")
 
-# Actual red light times (minimum red time + amber time)
-actual_red_A = actual_red_time(green_B, amber_B)
-print(f"Actual Red Light Time for Road A: {actual_red_A:.2f} seconds")
+    min_green_B = minimum_green_time(min_red_A, amber_B)
+    print(f"Minimum Green Time for Road B: {min_green_B:.2f} seconds")
 
-actual_red_B = actual_red_time(green_A, amber_A)
-print(f"Actual Red Light Time for Road B: {actual_red_B:.2f} seconds")
+    green_A, green_B = actual_green_time(min_green_A, min_green_B, volume_A, volume_B)
+    print(f"Actual Green Time for Road A: {green_A:.2f} seconds")
+    print(f"Actual Green Time for Road B: {green_B:.2f} seconds")
 
-# Calculate the "Do Not Walk" time for road A (based on actual red time of road B)
-do_not_walk_A = do_not_walk_time_A(actual_red_B)
-print(f"Do Not Walk Time for Road A: {do_not_walk_A:.2f} seconds")
+    cycle_len = cycle_length(green_A, green_B, amber_A, amber_B)
+    print(f"Cycle Length: {cycle_len:.2f} seconds")
 
-do_not_walk_B = do_not_walk_time_B(actual_red_A)
-print(f"Do Not Walk Time for Road B: {do_not_walk_B:.2f} seconds")
+    # Actual red light times (minimum red time + amber time)
+    actual_red_A = actual_red_time(green_B, amber_B)
+    print(f"Actual Red Light Time for Road A: {actual_red_A:.2f} seconds")
 
-# Calculate the pedestrian walk time for road A and road B
-walk_A = pedestrian_walk_time(cycle_len, do_not_walk_A, clearance_A)
-print(f"Pedestrian Walk Time for Road A: {walk_A:.2f} seconds")
+    actual_red_B = actual_red_time(green_A, amber_A)
+    print(f"Actual Red Light Time for Road B: {actual_red_B:.2f} seconds")
 
-walk_B = pedestrian_walk_time(cycle_len, do_not_walk_B, clearance_B)
-print(f"Pedestrian Walk Time for Road B: {walk_B:.2f} seconds")
+    # Calculate the "Do Not Walk" time for road A (based on actual red time of road B)
+    do_not_walk_A = do_not_walk_time_A(actual_red_B)
+    print(f"Do Not Walk Time for Road A: {do_not_walk_A:.2f} seconds")
 
-# Adjust the pedestrian walk time and clearance time if necessary to ensure it fits within one cycle
-if walk_A + clearance_A + do_not_walk_A > cycle_len:
-    walk_A = cycle_len - clearance_A - do_not_walk_A
-if walk_B + clearance_B + do_not_walk_B > cycle_len:
-    walk_B = cycle_len - clearance_B - do_not_walk_B
+    do_not_walk_B = do_not_walk_time_B(actual_red_A)
+    print(f"Do Not Walk Time for Road B: {do_not_walk_B:.2f} seconds")
 
-# Print the red, green, and amber times for road A (TSA) and road B (TSB)
-# Print the walk and clearance times for pedestrians on roads A and B (PSA and PSB)
+    # Calculate the pedestrian walk time for road A and road B
+    walk_A = pedestrian_walk_time(cycle_len, do_not_walk_A, clearance_A)
+    print(f"Pedestrian Walk Time for Road A: {walk_A:.2f} seconds")
 
-print(f"TSA Green Time: {green_A:.2f} seconds, Amber Time: {amber_A:.2f} seconds, Red Time: {actual_red_A:.2f} seconds")
-print(f"PSB Walk Time: {walk_B:.2f} seconds, Clearance Time: {clearance_B:.2f} seconds, Do Not Walk Time: {do_not_walk_B:.2f} seconds")
+    walk_B = pedestrian_walk_time(cycle_len, do_not_walk_B, clearance_B)
+    print(f"Pedestrian Walk Time for Road B: {walk_B:.2f} seconds")
 
-print(f"TSB Green Time: {green_B:.2f} seconds, Amber Time: {amber_B:.2f} seconds, Red Time: {actual_red_B:.2f} seconds")
-print(f"PSA Walk Time: {walk_A:.2f} seconds, Clearance Time: {clearance_A:.2f} seconds, Do Not Walk Time: {do_not_walk_A:.2f} seconds")
+    # Adjust the pedestrian walk time and clearance time if necessary to ensure it fits within one cycle
+    if walk_A + clearance_A + do_not_walk_A > cycle_len:
+        walk_A = cycle_len - clearance_A - do_not_walk_A
+    if walk_B + clearance_B + do_not_walk_B > cycle_len:
+        walk_B = cycle_len - clearance_B - do_not_walk_B
 
-# Visualize the Results (unchanged from original code)
-fig, ax = plt.subplots(2, 1, figsize=(10, 6))  # 2 rows, 1 column
+    # Print the red, green, and amber times for road A (TSA) and road B (TSB)
+    # Print the walk and clearance times for pedestrians on roads A and B (PSA and PSB)
 
-# TSA and PSB visualization (Start with Green -> Yellow -> Red)
-bar1 = ax[0].barh(['PSB'], [walk_B], color='#32CD32', label='Walk')  # Lighter green for PSB
-bar2 = ax[0].barh(['PSB'], [clearance_B], left=[walk_B], color='#FFD700', label='Clearance')  # Different yellow
-bar3 = ax[0].barh(['PSB'], [do_not_walk_B], left=[walk_B + clearance_B], color='#FF6347', label='Do Not Walk')  # Faded red
+    print(f"TSA Green Time: {green_A:.2f} seconds, Amber Time: {amber_A:.2f} seconds, Red Time: {actual_red_A:.2f} seconds")
+    print(f"PSB Walk Time: {walk_B:.2f} seconds, Clearance Time: {clearance_B:.2f} seconds, Do Not Walk Time: {do_not_walk_B:.2f} seconds")
 
-bar4 = ax[0].barh(['TSA'], [green_A], color='#228B22', label='Green')  # Darker green for TSA
-bar5 = ax[0].barh(['TSA'], [amber_A], left=[green_A], color='yellow', label='Amber')
-bar6 = ax[0].barh(['TSA'], [min_red_A], left=[green_A + amber_A], color='red', label='Red')
+    print(f"TSB Green Time: {green_B:.2f} seconds, Amber Time: {amber_B:.2f} seconds, Red Time: {actual_red_B:.2f} seconds")
+    print(f"PSA Walk Time: {walk_A:.2f} seconds, Clearance Time: {clearance_A:.2f} seconds, Do Not Walk Time: {do_not_walk_A:.2f} seconds")
 
-# Customizing the legend for TSA and PSB
-handles, labels = ax[0].get_legend_handles_labels()
-order = [3, 4, 5, 0, 1, 2]  # Custom order: Green -> Amber -> Red -> Walk -> Clearance -> Do Not Walk
-ax[0].legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper right', bbox_to_anchor=(1.15, 1))
-ax[0].set_title('TSA and PSB')
+    print("*"*100)
 
-# TSB and PSA visualization (Start with Red -> Yellow -> Green)
-bar7 = ax[1].barh(['PSA'], [do_not_walk_A], color='#FF6347', label='Do Not Walk')  # Faded red for PSA
-bar8 = ax[1].barh(['PSA'], [clearance_A], left=[do_not_walk_A], color='#FFD700', label='Clearance')  # Different yellow
-bar9 = ax[1].barh(['PSA'], [walk_A], left=[do_not_walk_A + clearance_A], color='#32CD32', label='Walk')  # Lighter green
+    # Visualize the Results (unchanged from original code)
+    fig, ax = plt.subplots(2, 1, figsize=(10, 6))  # 2 rows, 1 column
 
-bar10 = ax[1].barh(['TSB'], [actual_red_B], color='red', label='Red')
-bar11 = ax[1].barh(['TSB'], [amber_B], left=[actual_red_B], color='yellow', label='Amber')
-bar12 = ax[1].barh(['TSB'], [green_B], left=[actual_red_B + amber_B], color='#228B22', label='Green')  # Darker green for TSB
+    # TSA and PSB visualization (Start with Green -> Yellow -> Red)
+    bar1 = ax[0].barh(['PSB'], [walk_B], color='#32CD32', label='Walk')  # Lighter green for PSB
+    bar2 = ax[0].barh(['PSB'], [clearance_B], left=[walk_B], color='#FFD700', label='Clearance')  # Different yellow
+    bar3 = ax[0].barh(['PSB'], [do_not_walk_B], left=[walk_B + clearance_B], color='#FF6347', label='Do Not Walk')  # Faded red
 
-# Customizing the legend for TSB and PSA
-handles, labels = ax[1].get_legend_handles_labels()
-order = [3, 4, 5, 0, 1, 2]  # Custom order: Do Not Walk -> Clearance -> Walk -> Red -> Amber -> Green
-ax[1].legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper right', bbox_to_anchor=(1.15, 1))
-ax[1].set_title('TSB and PSA')
+    bar4 = ax[0].barh(['TSA'], [green_A], color='#228B22', label='Green')  # Darker green for TSA
+    bar5 = ax[0].barh(['TSA'], [amber_A], left=[green_A], color='yellow', label='Amber')
+    bar6 = ax[0].barh(['TSA'], [actual_red_A], left=[green_A + amber_A], color='red', label='Red')
 
-plt.tight_layout()
-plt.show()
+    # Customizing the legend for TSA and PSB
+    handles, labels = ax[0].get_legend_handles_labels()
+    order = [3, 4, 5, 0, 1, 2]  # Custom order: Green -> Amber -> Red -> Walk -> Clearance -> Do Not Walk
+    ax[0].legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper right', bbox_to_anchor=(1.15, 1))
+    ax[0].set_title('TSA and PSB')
+
+    # TSB and PSA visualization (Start with Red -> Yellow -> Green)
+    bar7 = ax[1].barh(['PSA'], [do_not_walk_A], color='#FF6347', label='Do Not Walk')  # Faded red for PSA
+    bar8 = ax[1].barh(['PSA'], [clearance_A], left=[do_not_walk_A], color='#FFD700', label='Clearance')  # Different yellow
+    bar9 = ax[1].barh(['PSA'], [walk_A], left=[do_not_walk_A + clearance_A], color='#32CD32', label='Walk')  # Lighter green
+
+    bar10 = ax[1].barh(['TSB'], [actual_red_B], color='red', label='Red')
+    bar11 = ax[1].barh(['TSB'], [amber_B], left=[actual_red_B], color='yellow', label='Amber')
+    bar12 = ax[1].barh(['TSB'], [green_B], left=[actual_red_B + amber_B], color='#228B22', label='Green')  # Darker green for TSB
+
+    # Customizing the legend for TSB and PSA
+    handles, labels = ax[1].get_legend_handles_labels()
+    order = [3, 4, 5, 0, 1, 2]  # Custom order: Do Not Walk -> Clearance -> Walk -> Red -> Amber -> Green
+    ax[1].legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper right', bbox_to_anchor=(1.15, 1))
+    ax[1].set_title('TSB and PSA')
+
+    plt.tight_layout()
+    plt.show(block=False)  # Make sure the plot doesn't block the cycle
+
+    # Use plt.pause to simulate the cycle
+    start_time = time.time()
+    elapsed = 0
+
+    # Run until the cycle length is over, regardless of window closure
+    while elapsed < cycle_len:
+        elapsed = time.time() - start_time
+        plt.pause(0.1)  # Keep updating the graph until the cycle length ends
+
+    # Now the cycle is over, we proceed to the next iteration
+    plt.close()  # Close the plot after the full cycle is done
+
