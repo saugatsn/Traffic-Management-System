@@ -1,146 +1,200 @@
+import json
+from datetime import datetime, timedelta
 import numpy as np
-import pandas as pd
-import random
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-# Define parameters
-roads = ['Road A', 'Road B', 'Road C', 'Road D', 'Road E']
-time_intervals = ['6:00-7:00', '7:00-8:00', '8:00-9:00', '9:00-10:00', '10:00-11:00', 
-                  '11:00-12:00', '12:00-13:00', '13:00-14:00', '14:00-15:00', '15:00-16:00']
+# Function to round off time to nearest 30 minutes
+def round_time(dt=None):
+    """Round a datetime object to the nearest 30 minutes."""
+    if dt is None:
+        dt = datetime.now()
 
-# Simulate traffic data
-traffic_data = []
-for road in roads:
-    for time in time_intervals:
-        # Simulate the number of cars on each road at different times
-        cars = random.randint(50, 500)  # Random number of cars
-        traffic_data.append([road, time, cars])
+    # Get the number of minutes passed in the current hour
+    minute = dt.minute
 
-# Create a DataFrame for traffic data
-df_traffic = pd.DataFrame(traffic_data, columns=['Road', 'Time Interval', 'Number of Cars'])
-
-# Save the data to a CSV file
-df_traffic.to_csv('simulated_traffic_data.csv', index=False)
-
-# Display the data
-print(df_traffic)
-
-# Load the simulated traffic data from Step 1
-df_traffic = pd.read_csv('simulated_traffic_data.csv')
-
-# Calculate the average number of cars per road
-average_traffic_per_road = df_traffic.groupby('Road')['Number of Cars'].mean()
-
-# Calculate the peak times (time intervals with maximum cars) for each road
-peak_times_per_road = df_traffic.loc[df_traffic.groupby('Road')['Number of Cars'].idxmax()]
-
-# Plot the average traffic per road
-plt.figure(figsize=(8, 6))
-average_traffic_per_road.plot(kind='bar', color='skyblue')
-plt.title('Average Number of Cars per Road')
-plt.xlabel('Road')
-plt.ylabel('Average Number of Cars')
-plt.xticks(rotation=0)
-plt.show()
-
-# Plot traffic trends over time for each road
-plt.figure(figsize=(10, 8))
-for road in df_traffic['Road'].unique():
-    road_data = df_traffic[df_traffic['Road'] == road]
-    plt.plot(road_data['Time Interval'], road_data['Number of Cars'], label=road)
-
-plt.title('Traffic Trends Over Time')
-plt.xlabel('Time Interval')
-plt.ylabel('Number of Cars')
-plt.xticks(rotation=45)
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-# Display peak times for each road
-print("Peak Times for Each Road:")
-print(peak_times_per_road[['Road', 'Time Interval', 'Number of Cars']])
-
-
-# Load the simulated traffic data
-df_traffic = pd.read_csv('simulated_traffic_data.csv')
-
-# Convert time intervals into numerical values (e.g., '6:00-7:00' -> 6)
-df_traffic['Time Numeric'] = df_traffic['Time Interval'].apply(lambda x: int(x.split(':')[0]))
-
-# Separate features (time) and target (number of cars)
-X = df_traffic[['Time Numeric']]  # Feature: time of day
-y = df_traffic['Number of Cars']  # Target: number of cars
-
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Create a linear regression model
-model = LinearRegression()
-
-# Train the model on the training data
-model.fit(X_train, y_train)
-
-# Make predictions on the test data
-y_pred = model.predict(X_test)
-
-# Visualize the predictions vs actual data
-plt.figure(figsize=(8, 6))
-plt.scatter(X_test, y_test, color='blue', label='Actual Traffic')
-plt.plot(X_test, y_pred, color='red', label='Predicted Traffic')
-plt.title('Predicted vs Actual Traffic')
-plt.xlabel('Time of Day (hour)')
-plt.ylabel('Number of Cars')
-plt.legend()
-plt.show()
-
-# Evaluate the model (R^2 score)
-r2_score = model.score(X_test, y_test)
-print(f"Model R^2 Score: {r2_score:.2f}")
-
-# Example prediction: Predict traffic for a specific time
-example_time = np.array([[14]])  # 14:00 (2:00 PM)
-predicted_traffic = model.predict(example_time)
-print(f"Predicted traffic at 14:00: {predicted_traffic[0]:.0f} cars")
-
-# Example thresholds for controlling traffic light timings (in seconds)
-BASE_GREEN_TIME = 30  # Base green light time in seconds
-MAX_GREEN_TIME = 60   # Maximum green light time for heavy traffic
-MIN_GREEN_TIME = 10   # Minimum green light time for light traffic
-TRAFFIC_THRESHOLD_HIGH = 400  # Number of cars considered as high traffic
-TRAFFIC_THRESHOLD_LOW = 100   # Number of cars considered as low traffic
-
-# Simulated predictions for each road and time (based on the prediction model from Step 3)
-predicted_traffic = {
-    'Road A': 350,  # Medium traffic
-    'Road B': 500,  # Heavy traffic
-    'Road C': 90,   # Light traffic
-    'Road D': 450,  # Heavy traffic
-    'Road E': 150   # Low-medium traffic
-}
-
-# Function to adjust green light time based on predicted traffic
-def adjust_green_light(predicted_cars):
-    if predicted_cars > TRAFFIC_THRESHOLD_HIGH:
-        return MAX_GREEN_TIME  # Heavy traffic, increase green light time
-    elif predicted_cars < TRAFFIC_THRESHOLD_LOW:
-        return MIN_GREEN_TIME  # Light traffic, decrease green light time
+    # If the minutes are between 0 and 14, round down to the start of the hour
+    if minute < 15:
+        dt = dt.replace(minute=0, second=0, microsecond=0)
+    # If the minutes are between 15 and 44, round to 30 minutes
+    elif minute < 45:
+        dt = dt.replace(minute=30, second=0, microsecond=0)
+    # If the minutes are between 45 and 59, round up to the next hour
     else:
-        # Medium traffic, set green light based on proportion of traffic
-        return int(BASE_GREEN_TIME + (predicted_cars - TRAFFIC_THRESHOLD_LOW) /
-                   (TRAFFIC_THRESHOLD_HIGH - TRAFFIC_THRESHOLD_LOW) * (MAX_GREEN_TIME - BASE_GREEN_TIME))
+        dt = dt.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    
+    return dt
 
-# Create a dictionary to store the green light durations for each road
-traffic_light_timings = {}
+# Load traffic data from JSON
+with open('traffic_data.json', 'r') as f:
+    traffic_data = json.load(f)
 
-# Calculate green light timings for each road based on the predicted traffic
-for road, traffic in predicted_traffic.items():
-    green_light_time = adjust_green_light(traffic)
-    traffic_light_timings[road] = green_light_time
+# Get current date and rounded-off time
+current_datetime = round_time(datetime.now())
+current_date_str = current_datetime.strftime("%Y-%m-%d")
 
-# Display the green light timings for each road
-print("Traffic Light Timings (in seconds):")
-for road, time in traffic_light_timings.items():
-    print(f"{road}: {time} seconds green light")
+# Function to find historical data for a specific hour
+def find_historical_data(traffic_data, target_time):
+    target_time_str = target_time.strftime("%H:%M:%S")
+    historical_data = []
+    
+    for date, entries in traffic_data.items():
+        for entry in entries:
+            # Check if the month and day match the target date
+            if date[5:] == target_time.strftime("%m-%d") and entry['timestamp'].endswith(target_time_str):
+                historical_data.append(entry)
+
+    # If less than 2 entries are found, use the last 20 data points of the exact time
+    if len(historical_data) < 2:
+        exact_time_data = []
+        for date, entries in traffic_data.items():
+            for entry in entries:
+                if entry['timestamp'].endswith(target_time_str):
+                    exact_time_data.append(entry)
+        historical_data = exact_time_data[-20:]  # Take last 20 data points of the exact time
+
+    return historical_data
+
+# Function to perform regression for a given hour
+def perform_regression(historical_data):
+    dates = []
+    volumes_A = []
+    speeds_A = []
+    volumes_B = []
+    speeds_B = []
+
+    for data in historical_data:
+        date_obj = datetime.strptime(data['timestamp'], "%Y-%m-%d %H:%M:%S")
+        dates.append(date_obj)
+        # Format dates in a more readable format
+        formatted_dates = [d.strftime("%B %d, %Y, %I:%M %p") for d in dates]
+
+        # Collect data for Road A and Road B
+        volumes_A.append(data['road_A']['vehicle_count'])
+        speeds_A.append(data['road_A']['avg_speed'])
+        volumes_B.append(data['road_B']['vehicle_count'])
+        speeds_B.append(data['road_B']['avg_speed'])
+
+    # Convert lists to numpy arrays
+    date_nums = np.array([d.toordinal() for d in dates]).reshape(-1, 1)
+    volumes_A = np.array(volumes_A)
+    speeds_A = np.array(speeds_A)
+    volumes_B = np.array(volumes_B)
+    speeds_B = np.array(speeds_B)
+
+    # Print data for regression
+    print(f"\nPerforming regression on historical data.")
+    print(f"Dates: {formatted_dates}")
+    print(f"Volumes A: {volumes_A}")
+    print(f"Speeds A: {speeds_A}")
+    print(f"Volumes B: {volumes_B}")
+    print(f"Speeds B: {speeds_B}")
+
+    # Perform linear regression for Road A and Road B volumes and speeds
+    volume_A_model = LinearRegression().fit(date_nums, volumes_A)
+    speed_A_model = LinearRegression().fit(date_nums, speeds_A)
+    volume_B_model = LinearRegression().fit(date_nums, volumes_B)
+    speed_B_model = LinearRegression().fit(date_nums, speeds_B)
+
+    return volume_A_model, speed_A_model, volume_B_model, speed_B_model, dates, volumes_A, speeds_A, volumes_B, speeds_B
+
+# Predict values for the next 24 hours and print them
+def predict_traffic_for_24_hours():
+    start_time = current_datetime
+    traffic_predictions = []
+    
+    for i in range(24):
+        prediction_time = start_time + timedelta(hours=i)
+        
+        # Fetch historical data for this hour
+        historical_data = find_historical_data(traffic_data, prediction_time)
+        
+        # If we have data, perform regression and make predictions
+        if historical_data:
+            volume_A_model, speed_A_model, volume_B_model, speed_B_model, dates, volumes_A, speeds_A, volumes_B, speeds_B = perform_regression(historical_data)
+            
+            # Make predictions
+            prediction_date_ordinal = np.array([[prediction_time.toordinal()]])
+            
+            predicted_volume_A_now = volume_A_model.predict(prediction_date_ordinal)
+            predicted_speed_A_now = speed_A_model.predict(prediction_date_ordinal)
+            predicted_volume_B_now = volume_B_model.predict(prediction_date_ordinal)
+            predicted_speed_B_now = speed_B_model.predict(prediction_date_ordinal)
+
+            traffic_predictions.append({
+                'time': prediction_time.strftime('%I:%M %p'),
+                'volume_A': predicted_volume_A_now[0],
+                'speed_A': predicted_speed_A_now[0],
+                'volume_B': predicted_volume_B_now[0],
+                'speed_B': predicted_speed_B_now[0]
+            })
+
+            # Print the calculated predictions
+            print(f"\nCalculating for {prediction_time.strftime('%I:%M %p')}:")
+            print(f"Predicted Volume for Road A: {predicted_volume_A_now[0]}")
+            print(f"Predicted Speed for Road A: {predicted_speed_A_now[0]}")
+            print(f"Predicted Volume for Road B: {predicted_volume_B_now[0]}")
+            print(f"Predicted Speed for Road B: {predicted_speed_B_now[0]}")
+
+    return traffic_predictions
+
+# Function to give insights based on traffic predictions
+def provide_traffic_insights(traffic_predictions):
+    print("\nTraffic Insights for the next 24 hours:")
+    for prediction in traffic_predictions:
+        time = prediction['time']
+        volume_A = prediction['volume_A']
+        speed_A = prediction['speed_A']
+        volume_B = prediction['volume_B']
+        speed_B = prediction['speed_B']
+
+        # Simple logic for traffic insights
+        if volume_A >= 400 and (speed_A >= 10 and speed_A <= 40):
+            traffic_condition = "slow-moving and congested"
+        elif volume_A >= 400 and (speed_A > 40):
+            traffic_condition = "congested and fast-moving"
+        elif volume_A < 200 and (speed_A >= 10 and speed_A <= 40):
+            traffic_condition = "clear and slow-moving"
+        elif volume_A < 200 and (speed_A > 40):
+            traffic_condition = "clear and fast-moving"
+        elif volume_A >= 200 and volume_A < 400 and (speed_A >= 10 and speed_A <= 40):
+            traffic_condition = "moderate traffic and slow-moving"
+        elif volume_A >= 200 and volume_A < 400 and (speed_A > 40):
+            traffic_condition = "moderate traffic and fast-moving"
+        else:
+            traffic_condition = "unknown condition"
+        
+        print(f"FOR ROAD B: At {time}, the traffic is expected to be {traffic_condition}. "
+              f"Road A: {int(volume_A)} vehicles, {int(speed_A)} km/h. "
+              f"Road B: {int(volume_B)} vehicles, {int(speed_B)} km/h.")
+        if volume_B >= 400 and (speed_B >= 10 and speed_B <= 40):
+            traffic_condition = "slow-moving and congested"
+        elif volume_B >= 400 and (speed_B > 40):
+            traffic_condition = "congested and fast-moving"
+        elif volume_B < 200 and (speed_B >= 10 and speed_B <= 40):
+            traffic_condition = "clear and slow-moving"
+        elif volume_B < 200 and (speed_B > 40):
+            traffic_condition = "clear and fast-moving"
+        elif volume_B >= 200 and volume_B < 400 and (speed_B >= 10 and speed_B <= 40):
+            traffic_condition = "moderate traffic and slow-moving"
+        elif volume_B >= 200 and volume_B < 400 and (speed_B > 40):
+            traffic_condition = "moderate traffic and fast-moving"
+        else:
+            traffic_condition = "unknown condition"
+
+        print(f"FOR ROAD A: At {time}, the traffic is expected to be {traffic_condition}. "
+              f"Road A: {int(volume_A)} vehicles, {int(speed_A)} km/h. "
+              f"Road B: {int(volume_B)} vehicles, {int(speed_B)} km/h.")
+
+# Run the prediction and insights in a loop indefinitely
+while True:
+    traffic_predictions = predict_traffic_for_24_hours()
+    provide_traffic_insights(traffic_predictions)
+
+    # Wait until the next 30-minute rounded interval to re-run
+    current_datetime = round_time(datetime.now())
+    next_update_time = current_datetime + timedelta(minutes=30)
+    
+    while datetime.now() < next_update_time:
+        pass  # Keep the program running

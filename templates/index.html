@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traffic Light Simulation</title>
+    <style>
+      .light {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin: 10px;
+        display: inline-block;
+      }
+      .green {
+        background-color: grey;
+      }
+      .amber {
+        background-color: grey;
+      }
+      .red {
+        background-color: grey;
+      }
+      .active {
+        border: 5px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h2>TSA</h2>
+      <div id="tsa-green" class="light green"></div>
+      <div id="tsa-amber" class="light amber"></div>
+      <div id="tsa-red" class="light red"></div>
+    </div>
+    <div>
+      <h2>TSB</h2>
+      <div id="tsb-green" class="light green"></div>
+      <div id="tsb-amber" class="light amber"></div>
+      <div id="tsb-red" class="light red"></div>
+    </div>
+
+    <script>
+      function loadTrafficData() {
+        fetch("/traffic-data") // Calls the Python Flask endpoint
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data);
+            updateTrafficLights(data);
+          });
+      }
+
+      function updateTrafficLights(data) {
+        const tsaGreen = document.getElementById("tsa-green");
+        const tsaAmber = document.getElementById("tsa-amber");
+        const tsaRed = document.getElementById("tsa-red");
+
+        const tsbGreen = document.getElementById("tsb-green");
+        const tsbAmber = document.getElementById("tsb-amber");
+        const tsbRed = document.getElementById("tsb-red");
+
+        // Example logic to simulate lights, timing to be adjusted with actual timings from data
+        tsaGreen.style.backgroundColor = "green";
+        setTimeout(() => {
+          tsaGreen.style.backgroundColor = "grey";
+          tsaAmber.style.backgroundColor = "yellow";
+        }, data.TSA.green_time * 1000);
+
+        setTimeout(() => {
+          tsaAmber.style.backgroundColor = "grey";
+          tsaRed.style.backgroundColor = "red";
+        }, (data.TSA.green_time + data.TSA.amber_time) * 1000);
+
+        // Similar logic for TSB lights
+        tsbRed.style.backgroundColor = "red";
+        setTimeout(() => {
+          tsbRed.style.backgroundColor = "grey";
+          tsbAmber.style.backgroundColor = "yellow";
+        }, data.TSB.red_time * 1000);
+
+        setTimeout(() => {
+          tsbAmber.style.backgroundColor = "grey";
+          tsbGreen.style.backgroundColor = "green";
+        }, (data.TSB.red_time + data.TSB.amber_time) * 1000);
+      }
+
+      loadTrafficData(); // Initial call
+    </script>
+  </body>
+</html>

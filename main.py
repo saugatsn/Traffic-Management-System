@@ -3,22 +3,43 @@ import matplotlib.pyplot as plt
 import random
 import json
 import time
+from datetime import datetime
 import math
 
 # Function to generate random values for speed and volume
 def generate_random_data():
-    data = {
-        "road_A": {
-            "width": random.randint(10, 20),  # Width of road A in meters (constant)
-            "speed": random.randint(30, 80),  # Speed of vehicles on road A (random)
-            "volume": random.randint(200, 400)  # Volume of vehicles on road A (random)
-        },
-        "road_B": {
-            "width": random.randint(10, 20),  # Width of road B in meters (constant)
-            "speed": random.randint(30, 80),  # Speed of vehicles on road B (random)
-            "volume": random.randint(200, 400)  # Volume of vehicles on road B (random)
+    # Get the current hour
+    current_hour = datetime.now().hour
+
+    # Peak hours: 8-11 AM and 4-7 PM
+    if (8 <= current_hour <= 11) or (16 <= current_hour <= 19):
+        # During peak hours, reduce speed and increase volume slightly
+        data = {
+            "road_A": {
+                "width": random.randint(10, 20),  # Width of road A in meters (constant)
+                "speed": random.randint(10, 40),  # Reduced speed during peak hours
+                "volume": random.randint(200, 400)  # Increased volume during peak hours
+            },
+            "road_B": {
+                "width": random.randint(10, 20),  # Width of road B in meters (constant)
+                "speed": random.randint(10, 40),  # Reduced speed during peak hours
+                "volume": random.randint(200, 400)  # Increased volume during peak hours
+            }
         }
-    }
+    else:
+        # Non-peak hours, higher speed and lower volume
+        data = {
+            "road_A": {
+                "width": random.randint(10, 20),  # Width of road A in meters (constant)
+                "speed": random.randint(40, 80),  # Higher speed during non-peak hours
+                "volume": random.randint(50, 200)  # Lower volume during non-peak hours
+            },
+            "road_B": {
+                "width": random.randint(10, 20),  # Width of road B in meters (constant)
+                "speed": random.randint(40, 80),  # Higher speed during non-peak hours
+                "volume": random.randint(50, 200)  # Lower volume during non-peak hours
+            }
+        }
     return json.dumps(data, indent=4)
 
 # Step 1: Calculate Amber Time
@@ -74,8 +95,15 @@ def do_not_walk_time_B(actual_red_A):
 def pedestrian_walk_time(cycle_length, do_not_walk_A, clearance_A):
     return cycle_length - do_not_walk_A - clearance_A
 
+traffic_data_records = []
 window_open=True
 while True:
+    
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())  # Generate current timestamp
+    intersection_id = "INT001"  # Example intersection ID
+    road_A_id = "RA001"  # Road A ID
+    road_B_id = "RB001"  # Road B ID
+
         # Get values from JSON
     traffic_data_json = generate_random_data()
     traffic_data = json.loads(traffic_data_json)
@@ -182,6 +210,47 @@ while True:
     print(f"Total time for pedestrian in road B in 1 cycle: {walk_B+clearance_B+do_not_walk_B}")
 
     print("*"*100)
+
+        # Create a record for the current cycle
+    record = {
+        "timestamp": timestamp,
+        "intersection_id": intersection_id,
+        "road_A": {
+            "road_id": road_A_id,
+            "vehicle_count": volume_A,
+            "avg_speed": speed_A,
+            "green_time": green_A,
+            "red_time": actual_red_A,
+            "amber_time": amber_A
+        },
+        "road_B": {
+            "road_id": road_B_id,
+            "vehicle_count": volume_B,
+            "avg_speed": speed_B,
+            "green_time": green_B,
+            "red_time": actual_red_B,
+            "amber_time": amber_B
+        },
+        "pedestrian_A": {
+            "walk_time": walk_A,
+            "do_not_walk_time": do_not_walk_A,
+            "clearance_time": clearance_A
+        },
+        "pedestrian_B": {
+            "walk_time": walk_B,
+            "do_not_walk_time": do_not_walk_B,
+            "clearance_time": clearance_B
+        }
+    }
+
+    # Append the record to the list
+    traffic_data_records.append(record)
+    # print(traffic_data_records)
+
+    # Save the data to a JSON file after every cycle
+    with open('traffic_data.json', 'w') as json_file:
+        json.dump(traffic_data_records, json_file, indent=4)
+
 
     # Visualize the Results (unchanged from original code)
     fig, ax = plt.subplots(2, 1, figsize=(10, 6))  # 2 rows, 1 column
