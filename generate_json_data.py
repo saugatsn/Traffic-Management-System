@@ -2,12 +2,13 @@ import json
 import random
 from datetime import datetime, timedelta
 
-def generate_traffic_data(start_time, num_days, interval_minutes):
+def generate_traffic_data(start_date, end_date):
     data = {}
-    end_time = start_time + timedelta(days=num_days)
+    start_time = datetime.combine(start_date, datetime.min.time())
+    end_time = datetime.combine(end_date, datetime.min.time()) + timedelta(days=1) - timedelta(minutes=30)
     current_time = start_time
     
-    while current_time < end_time:
+    while current_time <= end_time:
         current_hour = current_time.hour
         if (8 <= current_hour <= 11) or (16 <= current_hour <= 19):
             # Peak hours: reduced speed and increased volume
@@ -68,17 +69,16 @@ def generate_traffic_data(start_time, num_days, interval_minutes):
             data[date_key] = []
         
         data[date_key].append(entry)
-        current_time += timedelta(minutes=interval_minutes)
+        current_time += timedelta(minutes=30)  # Half-hour interval
     
     return data
 
-# Define the start time, number of days, and interval
-start_time = datetime(2021, 2, 15, 0, 0, 0)
-num_days = 50  # Specify the number of days for data
-interval_minutes = 30
+# Define the start date and end date
+start_date = datetime(2024, 1, 1).date()
+end_date = datetime(2024, 9, 15).date()  # Specify the end date
 
 # Generate the data
-traffic_data = generate_traffic_data(start_time, num_days, interval_minutes)
+traffic_data = generate_traffic_data(start_date, end_date)
 
 # Save the data to a JSON file
 with open('traffic_data.json', 'w') as file:

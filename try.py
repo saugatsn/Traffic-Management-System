@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import time
 
 # Function to round off time to nearest 30 minutes
 def round_time(dt=None):
@@ -187,14 +188,21 @@ def provide_traffic_insights(traffic_predictions):
               f"Road A: {int(volume_A)} vehicles, {int(speed_A)} km/h. "
               f"Road B: {int(volume_B)} vehicles, {int(speed_B)} km/h.")
 
-# Run the prediction and insights in a loop indefinitely
-while True:
-    traffic_predictions = predict_traffic_for_24_hours()
-    provide_traffic_insights(traffic_predictions)
+# Initialize the previous rounded time
+previous_rounded_time = round_time(datetime.now())
 
-    # Wait until the next 30-minute rounded interval to re-run
+# Flag for initial run
+initial_run_done = False
+
+while True:
     current_datetime = round_time(datetime.now())
-    next_update_time = current_datetime + timedelta(minutes=30)
     
-    while datetime.now() < next_update_time:
-        pass  # Keep the program running
+    # Run prediction and insights if it's the first run or if the rounded-off time has changed
+    if not initial_run_done or current_datetime != previous_rounded_time:
+        traffic_predictions = predict_traffic_for_24_hours()
+        provide_traffic_insights(traffic_predictions)
+        previous_rounded_time = current_datetime
+        initial_run_done = True
+    
+    # Sleep for a short interval to prevent high CPU usage
+    time.sleep(1)
