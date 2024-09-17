@@ -290,6 +290,7 @@ while True:
         print(road_A_data)
         print("Road B data array:")
         print(road_B_data)
+        print("*"*100)
 
         # Visualize the Results
         fig, ax = plt.subplots(2, 1, figsize=(10, 6))  # 2 rows, 1 column
