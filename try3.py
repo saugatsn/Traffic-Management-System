@@ -8,25 +8,39 @@ import math
 
 # Function to generate random values for speed and volume
 def generate_random_data():
+    # Get the current hour
     current_hour = datetime.now().hour
+
+    # Peak hours: 8-11 AM and 4-7 PM
     if (8 <= current_hour <= 11) or (16 <= current_hour <= 19):
-        return {
-            "width_A": random.randint(10, 20),
-            "speed_A": random.randint(10, 40),
-            "volume_A": random.randint(200, 400),
-            "width_B": random.randint(10, 20),
-            "speed_B": random.randint(10, 40),
-            "volume_B": random.randint(200, 400)
+        # During peak hours, reduce speed and increase volume slightly
+        data = {
+            "road_A": {
+                "width": random.randint(10, 20),  # Width of road A in meters (constant)
+                "speed": random.randint(10, 40),  # Reduced speed during peak hours
+                "volume": random.randint(200, 400)  # Increased volume during peak hours
+            },
+            "road_B": {
+                "width": random.randint(10, 20),  # Width of road B in meters (constant)
+                "speed": random.randint(10, 40),  # Reduced speed during peak hours
+                "volume": random.randint(200, 400)  # Increased volume during peak hours
+            }
         }
     else:
-        return {
-            "width_A": random.randint(10, 20),
-            "speed_A": random.randint(40, 80),
-            "volume_A": random.randint(50, 200),
-            "width_B": random.randint(10, 20),
-            "speed_B": random.randint(40, 80),
-            "volume_B": random.randint(50, 200)
+        # Non-peak hours, higher speed and lower volume
+        data = {
+            "road_A": {
+                "width": random.randint(10, 20),  # Width of road A in meters (constant)
+                "speed": random.randint(40, 80),  # Higher speed during non-peak hours
+                "volume": random.randint(50, 200)  # Lower volume during non-peak hours
+            },
+            "road_B": {
+                "width": random.randint(10, 20),  # Width of road B in meters (constant)
+                "speed": random.randint(40, 80),  # Higher speed during non-peak hours
+                "volume": random.randint(50, 200)  # Lower volume during non-peak hours
+            }
         }
+    return data
 
 # Step 1: Calculate Amber Time
 def amber_time(speed):
@@ -87,35 +101,18 @@ def calculate_average(data_list):
 
 # New function to get the representative time for the current period
 def get_representative_time(current_time):
-    if current_time.minute < 15:
+    if current_time.minute < 30:
         return current_time.replace(minute=0, second=0, microsecond=0)
-    elif current_time.minute < 45:
-        return current_time.replace(minute=30, second=0, microsecond=0)
     else:
-        return (current_time + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        return current_time.replace(minute=30, second=0, microsecond=0)
 
 # Function to load existing data from JSON file
-import json
-import os
-
 def load_existing_data():
-    filename = 'traffic_data.json'
-    
-    if not os.path.exists(filename):
-        # File doesn't exist, create it and return an empty dictionary
-        with open(filename, 'w') as json_file:
-            json.dump({}, json_file)
+    try:
+        with open('traffic_data.json', 'r') as json_file:
+            return json.load(json_file)
+    except FileNotFoundError:
         return {}
-    
-    # File exists, try to read it
-    with open(filename, 'r') as json_file:
-        content = json_file.read()
-        if not content:
-            # File is empty, return an empty dictionary
-            return {}
-        else:
-            # File has content, parse and return it
-            return json.loads(content)
 
 # Function to save data to JSON file
 def save_data_to_json(data):
@@ -134,12 +131,10 @@ while True:
     current_time = datetime.now()
     
     # Determine the start of the next cycle
-    if current_time.minute < 15:
-        next_cycle_start = current_time.replace(minute=15, second=0, microsecond=0)
-    elif current_time.minute < 45:
-        next_cycle_start = current_time.replace(minute=45, second=0, microsecond=0)
+    if current_time.minute < 30:
+        next_cycle_start = current_time.replace(minute=30, second=0, microsecond=0)
     else:
-        next_cycle_start = (current_time + timedelta(hours=1)).replace(minute=15, second=0, microsecond=0)
+        next_cycle_start = (current_time + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
     
     # Calculate time until next cycle
     time_to_next_cycle = (next_cycle_start - current_time).total_seconds()
@@ -155,17 +150,17 @@ while True:
         road_B_id = "RB001"
 
         # Generate and process traffic data
-        traffic_data_random = generate_random_data()
+        traffic_data_generated = generate_random_data()
 
         # Extract data for roads A and B
-        width_A = traffic_data_random['width_A']
-        speed_A = traffic_data_random['speed_A']
-        volume_A = traffic_data_random['volume_A']
+        width_A = traffic_data_generated['road_A']['width']
+        speed_A = traffic_data_generated['road_A']['speed']
+        volume_A = traffic_data_generated['road_A']['volume']
 
-        width_B = traffic_data_random['width_B']
-        speed_B = traffic_data_random['speed_B']
-        volume_B = traffic_data_random['volume_B']
-        
+        width_B = traffic_data_generated['road_B']['width']
+        speed_B = traffic_data_generated['road_B']['speed']
+        volume_B = traffic_data_generated['road_B']['volume']
+
         print(f"For Road A: Width:{width_A} Speed:{speed_A} Volume:{volume_A} ")
         print(f"For Road B: Width:{width_B} Speed:{speed_B} Volume:{volume_B} ")
 
@@ -352,27 +347,27 @@ while True:
             "road_id": road_A_id,
             "vehicle_count": int(road_A_avg['volume']),
             "avg_speed": int(road_A_avg['speed']),
-            "green_time": road_A_avg['green'],
-            "red_time": road_A_avg['red'],
-            "amber_time": road_A_avg['amber']
+            "green_time": round(road_A_avg['green'], 2),
+            "red_time": round(road_A_avg['red'], 2),
+            "amber_time": round(road_A_avg['amber'], 2)
         },
         "road_B": {
             "road_id": road_B_id,
             "vehicle_count": int(road_B_avg['volume']),
             "avg_speed": int(road_B_avg['speed']),
-            "green_time": road_B_avg['green'],
-            "red_time": road_B_avg['red'],
-            "amber_time": road_B_avg['amber']
+            "green_time": round(road_B_avg['green'], 2),
+            "red_time": round(road_B_avg['red'], 2),
+            "amber_time": round(road_B_avg['amber'], 2)
         },
         "pedestrian_A": {
-            "walk_time": road_A_avg['walk'],
-            "do_not_walk_time": road_A_avg['do_not_walk'],
-            "clearance_time": road_A_avg['clearance']
+            "walk_time": round(road_A_avg['walk'], 2),
+            "do_not_walk_time": round(road_A_avg['do_not_walk'], 2),
+            "clearance_time": round(road_A_avg['clearance'], 2)
         },
         "pedestrian_B": {
-            "walk_time": road_B_avg['walk'],
-            "do_not_walk_time": road_B_avg['do_not_walk'],
-            "clearance_time": road_B_avg['clearance']
+            "walk_time": round(road_B_avg['walk'], 2),
+            "do_not_walk_time": round(road_B_avg['do_not_walk'], 2),
+            "clearance_time": round(road_B_avg['clearance'], 2)
         }
     }
 
