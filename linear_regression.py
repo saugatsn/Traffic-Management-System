@@ -58,6 +58,7 @@ def find_historical_data(traffic_data, target_time):
     return historical_data
 
 # Function to perform regression for a given hour
+print(f"\nPerforming regression on historical data.")
 def perform_regression(historical_data):
     dates = []
     volumes_A = []
@@ -85,12 +86,11 @@ def perform_regression(historical_data):
     speeds_B = np.array(speeds_B)
 
     # Print data for regression
-    print(f"\nPerforming regression on historical data.")
-    print(f"Dates: {formatted_dates}")
-    print(f"Volumes A: {volumes_A}")
-    print(f"Speeds A: {speeds_A}")
-    print(f"Volumes B: {volumes_B}")
-    print(f"Speeds B: {speeds_B}")
+    # print(f"Dates: {formatted_dates}")
+    # print(f"Volumes A: {volumes_A}")
+    # print(f"Speeds A: {speeds_A}")
+    # print(f"Volumes B: {volumes_B}")
+    # print(f"Speeds B: {speeds_B}")
 
     # Perform linear regression for Road A and Road B volumes and speeds
     volume_A_model = LinearRegression().fit(date_nums, volumes_A)
@@ -133,16 +133,16 @@ def predict_traffic_for_24_hours():
 
             # Print the calculated predictions
             print(f"\nCalculating for {prediction_time.strftime('%I:%M %p')}:")
-            print(f"Predicted Volume for Road A: {predicted_volume_A_now[0]}")
-            print(f"Predicted Speed for Road A: {predicted_speed_A_now[0]}")
-            print(f"Predicted Volume for Road B: {predicted_volume_B_now[0]}")
-            print(f"Predicted Speed for Road B: {predicted_speed_B_now[0]}")
+            # print(f"Predicted Volume for Road A: {predicted_volume_A_now[0]}")
+            # print(f"Predicted Speed for Road A: {predicted_speed_A_now[0]}")
+            # print(f"Predicted Volume for Road B: {predicted_volume_B_now[0]}")
+            # print(f"Predicted Speed for Road B: {predicted_speed_B_now[0]}")
 
     return traffic_predictions
 
 # Function to give insights based on traffic predictions
 def provide_traffic_insights(traffic_predictions):
-    print("\nTraffic Insights for the next 24 hours:")
+    print("\nTraffic Insights for the next 24 hours:\n")
     for prediction in traffic_predictions:
         time = prediction['time']
         volume_A = prediction['volume_A']
@@ -169,6 +169,7 @@ def provide_traffic_insights(traffic_predictions):
         print(f"FOR ROAD B: At {time}, the traffic is expected to be {traffic_condition}. "
               f"Road A: {int(volume_A)} vehicles, {int(speed_A)} km/h. "
               f"Road B: {int(volume_B)} vehicles, {int(speed_B)} km/h.")
+        print("*"*100)
         if volume_B >= 400 and (speed_B >= 10 and speed_B <= 40):
             traffic_condition = "slow-moving and congested"
         elif volume_B >= 400 and (speed_B > 40):
@@ -187,7 +188,7 @@ def provide_traffic_insights(traffic_predictions):
         print(f"FOR ROAD A: At {time}, the traffic is expected to be {traffic_condition}. "
               f"Road A: {int(volume_A)} vehicles, {int(speed_A)} km/h. "
               f"Road B: {int(volume_B)} vehicles, {int(speed_B)} km/h.")
-
+        print("*"*100)
 # Initialize the previous rounded time
 previous_rounded_time = round_time(datetime.now())
 
